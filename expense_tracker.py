@@ -2,6 +2,7 @@ import csv
 import os
 from datetime import date
 from datetime import datetime
+import json
 
 FILENAME = "expenses.csv"
 HEADERS = ['date', 'category', 'sum($)', 'description']
@@ -33,10 +34,12 @@ def add_expense():
 def show_expenses():
     with open(FILENAME, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
-        print(f'{'date':<12} {'category':<15} {'sum($)':<10} {'description'}')
-        print('-' * 50)
-        for row in reader:
-            print(f'{row['date']:<12} {row['category']:<15} {row['sum($)']:<10} {row['description']}')
+        rows = list(reader)
+        print(f"{'№':<4} {'date':<12} {'category':<15} {'sum($)':<10} {'description'}")
+        print('-' * 60)
+        for i, row in enumerate(rows):
+            print(f"{i:<4} {row['date']:<12} {row['category']:<15} {row['sum($)']:<10} {row['description']}")
+    return rows
 
 # counting the sum of expenses
 def expenses_sum():
@@ -95,6 +98,76 @@ def filter_by_date():
         print('No expenses found in this date range.')
 # -----------------------------
 
+# ------ DELETE / EDIT --------
+def delete_expense():
+    rows = show_expenses()
+    try:
+        index = int(input("Enter the number of the record to delete: "))
+        if index < 0 or index >= len(rows):
+            print("Invalid number.")
+            return
+    except ValueError:
+        print("Please enter a valid number.")
+        return
+
+    deleted = rows.pop(index)
+    print(f"Deleted: {deleted['date']} | {deleted['category']} | {deleted['sum($)']} | {deleted['description']}")
+
+    with open(FILENAME, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=HEADERS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+def edit_expense():
+    rows = show_expenses()
+    try:
+        index = int(input("Enter the number of the record to edit: "))
+        if index < 0 or index >= len(rows):
+            print("Invalid number.")
+            return
+    except ValueError:
+        print("Please enter a valid number.")
+        return
+
+    old = rows[index]
+    print(f"Editing record: {old['date']} | {old['category']} | {old['sum($)']} | {old['description']}")
+
+    new_date = input(f"New date [{old['date']}]: ").strip() or old['date']
+    new_cat = input(f"New category [{old['category']}]: ").strip() or old['category']
+    new_sum = input(f"New amount [{old['sum($)']}]: ").strip() or old['sum($)']
+    new_desc = input(f"New description [{old['description']}]: ").strip() or old['description']
+
+    rows[index] = {
+        'date': new_date,
+        'category': new_cat,
+        'sum($)': new_sum,
+        'description': new_desc
+    }
+
+    with open(FILENAME, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=HEADERS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print("Record updated.")
+# -----------------------------
+
+# export to json
+def export_to_json():
+    try:
+
+        with open(FILENAME, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            expenses = list(reader)
+    
+        with open('expenses.json', 'w', encoding='utf-8') as json_file:
+            json.dump(expenses, json_file, ensure_ascii=False, indent=4)
+
+        print('Exportet to "expenses.json"')
+    except Exception as e:
+        print(f'Error exporting to JSON: {e}')
+
+
 
 # the main proccess 
 def main():
@@ -105,10 +178,12 @@ def main():
         print('2. Show all expenses')
         print('3. Show the sum of your expenses')
         print('4. Filter your expenses')
-        print('5. Leave')
+        print('5. Delete/edit expense')
+        print('6. Export to JSON')
+        print('7. Leave')
         choice = input('Choose the option: ')
 
-        if choice == '5':
+        if choice == '7':
             break
         else:
             if choice == '1':
@@ -119,13 +194,21 @@ def main():
                 expenses_sum()
             elif choice == '4':
                 print('Choose your filter(by category/by date)')
-                choice2 = input('Only 1 or 2:')
+                choice2 = input('Only 1 or 2: ').strip()
                 if choice2 == '1':
                     filter_by_category()
                 elif choice2 == '2':
                     filter_by_date()
                 else:
                     print('Try again.')
+            elif choice == '5':
+                choice3 = input('Delete or edit?(1 or 2): ').strip()
+                if choice3 == '1':
+                    delete_expense()
+                elif choice3 == '2':
+                    edit_expense()
+            elif choice == '6':
+                export_to_json()
             else:
                 print('Try again.')
                 continue
