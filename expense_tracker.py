@@ -21,7 +21,7 @@ def add_expense():
         summ = float(input('Enter the amount: '))
     except ValueError:
         print('Put the number.')
-        return 
+        return
     desc = input('Enter the description: ')
     with open(FILENAME, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
@@ -30,7 +30,12 @@ def add_expense():
 
 # showing expenses
 def show_expenses():
-    print(open('expenses.csv').read())
+    with open(FILENAME, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        print(f'{'date':<12} {'category':<15} {'sum($)':<10} {'description'}')
+        print('-' * 50)
+        for row in reader:
+            print(f'{row['date']:<12} {row['category']:<15} {row['sum($)']:<10} {row['description']}')
 
 # counting the sum of expenses
 def expenses_sum():
@@ -45,6 +50,7 @@ def expenses_sum():
 def main():
     file_existence()
     while True:
+        print('\n--- Expense Tracker ---')
         print('1. Add expense')
         print('2. Show all expenses')
         print('3. Show the sum of your expenses')
@@ -56,12 +62,12 @@ def main():
         else:
             if choice == '1':
                 add_expense()
-            if choice == '2':
+            elif choice == '2':
                 show_expenses()
-            if choice == '3':
+            elif choice == '3':
                 expenses_sum()
             else:
-                print('Put the number')
+                print('Try again.')
                 continue
 
 main()
